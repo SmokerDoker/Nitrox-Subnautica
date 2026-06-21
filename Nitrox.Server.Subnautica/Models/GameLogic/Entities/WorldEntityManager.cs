@@ -6,6 +6,7 @@ using Nitrox.Model.DataStructures;
 using Nitrox.Model.DataStructures.Unity;
 using Nitrox.Model.Subnautica.DataStructures.GameLogic;
 using Nitrox.Model.Subnautica.DataStructures.GameLogic.Entities;
+using Nitrox.Model.Subnautica.DataStructures.GameLogic.Entities.Bases;
 using Nitrox.Model.Subnautica.DataStructures.GameLogic.Entities.Metadata;
 using Nitrox.Model.Subnautica.Helper;
 using Nitrox.Server.Subnautica.Models.GameLogic.Entities.Spawning;
@@ -65,6 +66,10 @@ internal sealed class WorldEntityManager
     {
         lock (globalRootEntitiesLock)
         {
+            foreach (GlobalRootEntity globalRootEntity in globalRootEntitiesById.Values)
+            {
+                PruneDestroyedBaseLeakChildren(globalRootEntity, entityRegistry);
+            }
             return new(globalRootEntitiesById.Values.OfType<T>());
         }
     }
@@ -389,5 +394,20 @@ internal sealed class WorldEntityManager
             }
         }
         return playerEntities;
+    }
+
+    internal static void PruneDestroyedBaseLeakChildren(Entity entity, EntityRegistry entityRegistry)
+    {
+        for (int i = entity.ChildEntities.Count - 1; i >= 0; i--)
+        {
+            Entity child = entity.ChildEntities[i];
+            if (child is BaseLeakEntity && !entityRegistry.TryGetEntityById(child.Id, out Entity _))
+            {
+                entity.ChildEntities.RemoveAt(i);
+                continue;
+            }
+
+            PruneDestroyedBaseLeakChildren(child, entityRegistry);
+        }
     }
 }
