@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Nitrox.Model.DataStructures;
 using Nitrox.Model.Subnautica.DataStructures.GameLogic.Entities.Bases;
 using NSubstitute;
